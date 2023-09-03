@@ -25,6 +25,7 @@ router.get("/get", verifyToken, async (req, res) => {
   }
 });
 
+//Get Own Ads
 router.get("/get/:id", verifyToken, async (req, res) => {
   try {
     const ads = await Ads.find({ userid: req.params.id });
@@ -191,6 +192,7 @@ router.post("/ratings", verifyToken, async (req, res) => {
   }
 });
 
+//Filter Search By Likes
 router.get("/likes", verifyToken, async (req, res) => {
   try {
     const ads = await Ads.find().sort({ likesCount: -1 }).exec();
