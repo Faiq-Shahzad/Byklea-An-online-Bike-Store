@@ -33,7 +33,7 @@ app.use("/ads", adsrouter);
 app.use("/parts", partsrouter);
 
 mongoose
-  .connect("mongodb://localhost:27017/byklea")
+  .connect("mongodb://127.0.0.1:27017/byklea")
   .then(() => {
     console.log("Connected to MongoDB");
   })

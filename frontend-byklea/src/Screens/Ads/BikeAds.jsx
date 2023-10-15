@@ -1,5 +1,8 @@
 import React, { useState, useContext } from "react";
 import { TbMotorbike } from "react-icons/tb";
+import { MdOutlineCompare } from "react-icons/md";
+
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
 const BikeAds = () => {
   const bikeData = [
@@ -64,6 +67,14 @@ const BikeAds = () => {
           <h1 className="text-3xl font-bold text-orange-600 my-auto ml-3">
             Bike Ads
           </h1>
+        </div>
+        <div className="flex justify-end mr-10">
+          <NavLink to="./comparison">
+            <button className="p-2 bg-orange-600 rounded-lg text-white mb-3 flex justify-between items-center font-semibold">
+              <MdOutlineCompare className="mr-2 text-white" size={24} />
+              Compare Ads
+            </button>
+          </NavLink>
         </div>
         <div id="slider" className="w-full">
           {bikeData.map((item) => (

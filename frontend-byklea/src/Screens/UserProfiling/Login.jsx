@@ -1,6 +1,7 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { LockClosedIcon } from "@heroicons/react/20/solid";
 import { Swiper, SwiperSlide } from "swiper/react";
+import axios from "axios";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
@@ -10,27 +11,59 @@ import { RiMotorbikeFill } from "react-icons/ri";
 import { NavLink, useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const { setLoggedIn, setData } = useContext(UserContext);
+  const { setLoggedIn, data, setData } = useContext(UserContext);
   const [email, setEmail] = useState();
   const [password, setPassword] = useState();
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-
   setLoggedIn(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("TOKEN");
+    setLoggedIn(token);
+    if (!token) {
+      navigate("/login");
+    }
+  }, []);
 
   const loginHandler = async (e) => {
     e.preventDefault();
-    setData({
-      name: 'admin',
-      email: 'faiq@mail.com',
-      cnic: '123123123',
-      contact: '213213123',
-      role: 'user'
-    });
-    console.log('loggin in admin');
-    setLoggedIn(true);
-    navigate("/userdashboard");
+
+    e.preventDefault();
+
+    await axios
+      .post("http://localhost:3000/user/signin", {
+        email: email,
+        password: password,
+      })
+
+      .then((res) => {
+        if (res.status === 201) {
+          alert("Sign In Successfull");
+          localStorage.setItem("TOKEN", res.data.token);
+          localStorage.setItem("Name", res.data.name);
+          // localStorage.setItem("id", res.data._id.toString());
+          setData({
+            // _id: res.data._id.toString(),
+            name: res.data.name,
+            email: res.data.email,
+            contact: "03335405000",
+            role: "user",
+          });
+          navigate("/userdashboard");
+        }
+      })
+
+      .catch((error) => {
+        if (error.response.status === 404) {
+          setError("User Not Found");
+        } else if (error.response.status === 401) {
+          setError(error.response.data.message);
+        } else if (error.response.status === 400) {
+          setError(error.response.data.message);
+        }
+      });
   };
 
   return (
@@ -92,7 +125,6 @@ const Login = () => {
           <form className="mt-2 space-y-6">
             <input type="hidden" name="remember" defaultValue="true" />
             <div className="-space-y-px rounded-md shadow-sm">
-
               <div>
                 <label htmlFor="email-address" className="sr-only">
                   Email address
@@ -143,16 +175,12 @@ const Login = () => {
             <div>
               {error && <div className="p-4 font-bold">{error}</div>}
               <button
-
                 // type="submit"
                 className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 onClick={(e) => loginHandler(e)}
               >
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                  <LockClosedIcon
-                    className="h-5 w-5"
-                    aria-hidden="true"
-                  />
+                  <LockClosedIcon className="h-5 w-5" aria-hidden="true" />
                 </span>
                 Sign in
               </button>
@@ -161,18 +189,14 @@ const Login = () => {
 
             <hr></hr>
             <div className="flex items-center justify-center">
-              
-                <div className="text-sm">
-                  <span>Dont have an Account? </span>
-                  <NavLink to="/signup">
-                  <span
-                    className="font-bold text-orange-500 hover:text-orange-400"
-                  >
+              <div className="text-sm">
+                <span>Dont have an Account? </span>
+                <NavLink to="/signup">
+                  <span className="font-bold text-orange-500 hover:text-orange-400">
                     Sign Up
                   </span>
-                  </NavLink>
-                </div>
-              
+                </NavLink>
+              </div>
             </div>
           </form>
         </div>

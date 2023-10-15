@@ -27,7 +27,7 @@ router.post("/signup", async function (req, res, next) {
     );
     const UserModal = new User({ ...req.body, verifycode });
     const UserSave = await UserModal.save();
-    const url = `http://localhost:3000/verify/${verifycode}`;
+    const url = `http://localhost:3001/verify/${verifycode}`;
     await sendEmail(req.body.email, "Verify User", url);
     console.log("send email to ", req.body.email);
     res.status(200).json(UserSave);

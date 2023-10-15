@@ -1,127 +1,74 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import Select from "react-select";
 import { FaUserPlus, FaFilePrescription } from "react-icons/fa";
 import { GrFormClose } from "react-icons/gr";
 import axios from "axios";
 import { UserContext } from "../../contexts/UserProvider";
 import { LiaAdSolid } from "react-icons/lia";
+import { useNavigate } from "react-router-dom";
 // import { doctorsData } from '../data/DoctorsData';
 // import { cpt4 } from '../data/cpt';
 // import { medicines } from '../data/Medicine';
 // import { backendUrl } from '../constants/urls';
 
 const PostAd = () => {
-  // const { data, selectedPatient, setSelectedPatient } = useContext(UserContext);
+  const { data, selectedPatient, setSelectedPatient } = useContext(UserContext);
+  const navigate = useNavigate();
 
-  // const [sympTitle, setSympTitle] = useState();
-  // const [prescription, setPrescription] = useState([]);
-  // const [disease, setDisease] = useState();
-  // const [med, setMeds] = useState();
-  // const [dosage, setDosage] = useState();
-  // const [no_of_dose, setNo_of_Dose] = useState();
-  // const [labTests, setLabTests] = useState([]);
-  // const [comments, setComments] = useState();
-  // const [symptoms, setSymptoms] = useState([]);
-  // const [record, setRecord] = useState();
+  const [title, setTitle] = useState();
+  const [model, setModel] = useState();
+  const [color, setColor] = useState();
+  const [price, setPrice] = useState();
+  const [condition, setCondition] = useState();
+  const [comments, setComents] = useState();
+  const [city, setCity] = useState();
+  const [jwttoken, setJWTtoken] = useState("");
 
-  // // console.log(selectedPatient);
-  // const patient = selectedPatient;
+  useEffect(() => {
+    const token = localStorage.getItem("TOKEN");
 
-  // const addSymptomsHandler = (e) => {
-  //   e.preventDefault();
-  //   const symptom = {
-  //     key: Math.random(),
-  //     sym: sympTitle,
-  //   };
-  //   setSymptoms([...symptoms, symptom]);
-  //   console.log(symptom.key);
-  //   setSympTitle('');
-  // };
+    setJWTtoken(token);
 
-  // const onDeleteHandler = (key) => {
-  //   setSymptoms(symptoms.filter((element) => element.key !== key));
-  // };
+    if (!token) {
+      navigate("/login");
+    }
+  }, []);
 
-  // const addPrescriptionHandler = (e) => {
-  //   e.preventDefault();
-  //   console.log(prescription.includes(med));
-  //   console.log(med);
-  //   if (prescription.includes(med)) {
-  //     alert('Prescription already exist');
-  //   } else {
-  //     setPrescription([
-  //       ...prescription,
-  //       {
-  //         key: Math.random(),
-  //         medicine: med,
-  //         dosage,
-  //         no_of_days: no_of_dose,
-  //       },
-  //     ]);
-  //   }
-  // };
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    let config = {
+      headers: {
+        Authorization: "Bearer " + jwttoken,
+      },
+    };
 
-  // const sendMedicalRecord = async (mRec) => {
-  //   try {
-  //     const res = axios.post(`${backendUrl}doctors/medicalRecord`, mRec, {
-  //       headers: {
-  //         Authorization: `Bearer ${data.jwt}`,
-  //       },
-  //     });
-  //     console.log('res ', res);
-  //     alert('medical record created ');
-  //   } catch (e) {
-  //     console.log(e);
-  //     alert('unable to create medical record');
-  //   }
-  // };
+    console.log(config);
+    console.log("id is", data.id);
 
-  // const createMedicalRecord = (e) => {
-  //   e.preventDefault();
+    try {
+      await axios.post(
+        "http://localhost:3000/ads/add",
+        {
+          adtitle: title,
+          admodel: model,
+          description: comments,
+          color: color,
+          city: city,
+          price: price,
+          condition: condition
+          // userId: data.id,
+        },
+        config
+      );
 
-  //   const symptomArr = symptoms.map((item) => item.sym);
+      alert("Ad Posted successfully!");
+      navigate("/myads");
+    } catch (error) {
+      console.log(error);
 
-  //   console.log(symptomArr);
-  //   const rec = {
-  //     patientId: patient.cnic,
-  //     diagonsis: disease,
-  //     symptoms: symptoms.map((item) => item.sym),
-  //     labTests: labTests.map((item) => (`${item.value} - ${item.label}`)),
-  //     prescription: prescription.map((item) => ({ medicineName: item.medicine, qty: item.dosage, days: item.no_of_days })),
-  //     recommendation: comments,
-  //   };
-  //   setRecord(rec);
-  //   console.log('Rec', rec);
-  //   sendMedicalRecord(rec);
-  // };
-
-  // console.log(
-  //   symptoms.map((item) => {
-  //     console.log(item.sym);
-  //   }),
-  // );
-
-  // console.log(record);
-
-  // const onDeleteMedicineHandler = (key) => {
-  //   setPrescription(prescription.filter((element) => element.key !== key));
-  // };
-
-  // const doc = {
-  //   id: doctorsData[0].DoctorID,
-  //   name: doctorsData[0].DoctorName,
-  //   email: doctorsData[0].DoctorEmail,
-  //   cnic: '34601-7383151-3',
-  //   spec: doctorsData[0].Specialization,
-  //   phn: doctorsData[0].Phn,
-  //   pic: doctorsData[0].DoctorImage,
-  // };
-
-  // const status = {
-  //   one: 'Active',
-  //   two: 'On Hold',
-  //   three: 'Completed',
-  // };
+      alert("Failed to submit review.");
+    }
+  };
 
   const date = new Date();
   const month = date.getMonth() + 1;
@@ -178,6 +125,8 @@ const PostAd = () => {
                   type="text"
                   name="disease"
                   placeholder="Cd-70..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                 />
               </div>
 
@@ -187,14 +136,16 @@ const PostAd = () => {
                     className="mb-2 mr-3 font-semibold text-lg text-gray-900"
                     htmlFor="dosage"
                   >
-                    Product Name
+                    City
                   </label>
                   <div>
                     <input
                       className="border py-2 px-3 text-grey-800 w-3/4"
                       type="text"
-                      placeholder="Product Name"
+                      placeholder="City Name"
                       required
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
                     />
                   </div>
                 </div>
@@ -211,6 +162,8 @@ const PostAd = () => {
                       type="text"
                       placeholder="Year"
                       required
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
                     />
                   </div>
                 </div>
@@ -229,6 +182,8 @@ const PostAd = () => {
                       type="text"
                       placeholder="Color"
                       required
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
                     />
                   </div>
                 </div>
@@ -247,6 +202,8 @@ const PostAd = () => {
                       max={10}
                       placeholder="/10"
                       required
+                      value={condition}
+                      onChange={(e) => setCondition(e.target.value)}
                     />
                   </div>
                 </div>
@@ -285,6 +242,8 @@ const PostAd = () => {
                       min={0}
                       placeholder="90000"
                       required
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
                     />
                   </div>
                 </div>
@@ -297,11 +256,17 @@ const PostAd = () => {
                   rows="4"
                   cols="50"
                   placeholder="Comments..."
+                  type='text'
+                  value={comments}
+                  onChange={(e) => setComents(e.target.value)}
                 />
               </div>
             </div>
 
-            <button className="group relative flex w-full justify-center rounded-md border border-transparent bg-orange-500 hover:bg-orange-400 py-2 px-4 text-sm font-medium text-white  focus:outline-none focus:ring-2 focus:ring-orange-800 focus:ring-offset-2">
+            <button
+              className="group relative flex w-full justify-center rounded-md border border-transparent bg-orange-500 hover:bg-orange-400 py-2 px-4 text-sm font-medium text-white  focus:outline-none focus:ring-2 focus:ring-orange-800 focus:ring-offset-2"
+              onClick={handleSubmit}
+            >
               Post
             </button>
           </fieldset>

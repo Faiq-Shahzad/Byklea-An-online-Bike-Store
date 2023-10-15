@@ -5,7 +5,18 @@ const { verifyToken } = require("../auth/jwt");
 
 router.post("/add", verifyToken, async function (req, res, next) {
   try {
-    const adsModal = new Ads(req.body);
+    // const adsModal = new Ads(req.body);
+    
+    const adsModal = new Ads({
+      adtitle: req.body.adtitle,
+      admodel: req.body.admodel,
+      description: req.body.description,
+      color: req.body.color,
+      city: req.body.city,
+      price: req.body.price,
+      condition: req.body.condition,
+      userid: req.user.id,
+    });
     const AdSave = await adsModal.save();
     res.status(200).json(AdSave);
   } catch (error) {

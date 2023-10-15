@@ -27,6 +27,7 @@ import MechanicDetails from "./Screens/Mechanic/MechanicDetails";
 import BikeAds from "./Screens/Ads/BikeAds";
 import PartsAds from "./Screens/Ads/PartsAds";
 import PartsDetails from "./Screens/Ads/PartsDetails";
+import AdComparison from "./Screens/Ads/AdComparison";
 
 function App() {
   const {
@@ -169,6 +170,7 @@ function App() {
                   <Route path="/mechanics" element={<Mechanic />} />
                   <Route path="/mechanics/details" element={<MechanicDetails />} />
                   <Route path="/bikeads" element={<BikeAds />} />
+                  <Route path="/bikeads/comparison" element={<AdComparison />} />
                   <Route path="/bikeads/details" element={<BikeAds />} />
                   <Route path="/partsads" element={<PartsAds />} />
                   <Route path="/partsads/details" element={<PartsDetails />} />
