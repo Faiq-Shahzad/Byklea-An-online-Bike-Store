@@ -1,11 +1,14 @@
 import React from "react";
-import { FiHelpCircle } from "react-icons/fi";
+import { TbSettingsCog } from "react-icons/tb";
 
 const Setting = () => {
   return (
     <div className="mt-9">
-      <div className="dark:text-gray-400 p-8">
-        <h1 className="text-3xl font-bold text-orange-600">Settings</h1>
+      <div className="dark:text-gray-400 text-orange-600 p-8 flex">
+        <TbSettingsCog size={50} />
+        <h1 className="text-3xl font-bold text-orange-600 my-auto ml-3">
+          Settings
+        </h1>
       </div>
       <div className="flex flex-wrap lg:flex-nowrap justify-center ">
         <div className="w-4/5 bg-white rounded-lg shadow-2xl p-8 m-4 mx-auto my-auto">
@@ -177,6 +180,16 @@ const Setting = () => {
               Account Settings
             </h1>
             <ul className="list-disc ml-8">
+            <li>
+                <h3 className="font-semibold text-red-500 mt-3 mb-3">
+                  View/Edit Profile
+                </h3>
+                <div className="ml-8">
+                  <button className="mt-5 group relative flex w-full justify-center rounded-md border border-transparent bg-orange-600 py-2 px-4 text-sm font-medium text-white hover:bg-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                    Profile
+                  </button>
+                </div>
+              </li>
               <li>
                 <h3 className="font-semibold">Notifications</h3>
                 <select className="border border-orange-950 py-1 px-2 text-white text-sm ml-28 bg-orange-600">

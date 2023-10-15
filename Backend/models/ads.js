@@ -14,8 +14,8 @@ const AdsSchema = new schema({
     type: String,
     required: true,
   },
-  transmission: {
-    type: String,
+  condition: {
+    type: Number,
     required: true,
   },
   city: {

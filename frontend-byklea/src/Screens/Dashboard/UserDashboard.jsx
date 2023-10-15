@@ -8,9 +8,12 @@ import Typography from "@mui/material/Typography";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { TbMotorbike } from "react-icons/tb";
 import { HiOutlineWrenchScrewdriver } from "react-icons/hi2";
+import { UserContext } from "../../contexts/UserProvider";
 
 
 const UserDashboard = () => {
+
+  const { setLoggedIn, data, setData } = useContext(UserContext);
   const bikeData = [
     {
       name: "Honda 70",
@@ -68,10 +71,21 @@ const UserDashboard = () => {
   const slideLeft = () => {
     var slider = document.getElementById("slider");
     slider.scrollLeft = slider.scrollLeft - 500;
+    console.log(data._id);
   };
 
   const slideRight = () => {
     var slider = document.getElementById("slider");
+    slider.scrollLeft = slider.scrollLeft + 500;
+  };
+
+  const slideLeft1 = () => {
+    var slider = document.getElementById("slider1");
+    slider.scrollLeft = slider.scrollLeft - 500;
+  };
+
+  const slideRight1 = () => {
+    var slider = document.getElementById("slider1");
     slider.scrollLeft = slider.scrollLeft + 500;
   };
 
@@ -122,9 +136,9 @@ const UserDashboard = () => {
         </div>
 
         <div className="relative flex items-center max-w-screen-2xl">
-          <MdChevronLeft onClick={slideLeft} size={40} />
+          <MdChevronLeft onClick={slideLeft1} size={40} />
           <div
-            id="slider"
+            id="slider1"
             className="w-full h-full overflow-x-scroll scroll whitespace-nowrap scroll-smooth scrollbar-hide"
           >
             {bikeData.map((item) => (
@@ -141,7 +155,7 @@ const UserDashboard = () => {
               </div>
             ))}
           </div>
-          <MdChevronRight onClick={slideRight} size={40} />
+          <MdChevronRight onClick={slideRight1} size={40} />
         </div>
       </div>
     </>

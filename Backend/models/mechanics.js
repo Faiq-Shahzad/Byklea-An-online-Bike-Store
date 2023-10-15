@@ -14,10 +14,6 @@ const MechanicSchema = new schema({
     type: String,
     required: true,
   },
-  availabilityhours: {
-    type: String,
-    required: true,
-  },
   services: {
     type: [String],
     required: true,
