@@ -14,10 +14,6 @@ const userSchema = new schema({
     type: String,
     required: true,
   },
-  phone_number: {
-    type: String,
-    required: true,
-  },
   password: {
     type: String,
     required: true,
@@ -49,10 +45,6 @@ const validate = (data) => {
     name: Joi.string().required().label("Name"),
     email: Joi.string().email().required().label("Email"),
     password: passwordComplexity().required().label("Password"),
-    phone_number: Joi.string()
-      .pattern(/^\d{11}$/)
-      .required()
-      .label("Phone Number"),
   });
   return schema.validate(data);
 };
