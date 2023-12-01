@@ -5,6 +5,13 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 const cors = require("cors");
+const { OpenAI } = require("openai");
+require('dotenv').config();
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 
 var usersRouter = require("./routes/users");
 var passwordresetrouter = require("./routes/resetpassword");
@@ -32,8 +39,61 @@ app.use("/verify", verifyuserrouter);
 app.use("/ads", adsrouter);
 app.use("/parts", partsrouter);
 
-mongoose
-  .connect("mongodb://localhost:27017/byklea")
+const textGeneration = async (prompt) => {
+  try {
+    const response = await openai.createCompletion({
+    model: 'text-davinci-002',
+    prompt: `Human: ${prompt}\nAI: `,
+    temperature: 0.5,
+    max_tokens: 100,
+    top_p: 0.9,
+    frequency_penalty: 1,
+    presence_penalty: 0.3,
+    stop: ['Human:', 'AI:']
+      });
+  
+      return {
+          status: 1,
+          response: `${response.data.choices[0].text}`
+      };
+  } catch (error) {
+      return {
+          status: 0,
+          response: ''
+      };
+  }
+};
+
+app.post('/dialogflow', async (req, res) => {
+  let action = req.body.queryResult.action;
+  let queryText = req.body.queryResult.queryText;
+
+  if (action === 'input.unknown') {
+      let result = await textGeneration(queryText);
+      if (result.status == 1) {
+          res.send(
+              {
+                  fulfillmentText: result.response
+              }
+          );
+      } else {
+          res.send(
+              {
+                  fulfillmentText: `Sorry, I'm not able to help with that.`
+              }
+          );
+      }
+  } else {
+      res.send(
+          {
+              fulfillmentText: `No handler for the action ${action}.`
+          }
+      );
+  }
+});
+
+
+mongoose.connect("mongodb://127.0.0.1:27017/byklea")
   .then(() => {
     console.log("Connected to MongoDB");
   })
