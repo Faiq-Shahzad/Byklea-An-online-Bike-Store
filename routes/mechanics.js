@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const Mechanics = require("../models/mechanics");
+const { verifyToken } = require("../auth/jwt");
 
 // Endpoint to allow mechanics to sign up and set location
 router.post("/signup", verifyToken, async (req, res) => {
   try {
     // Create a new mechanic document
-    const newMechanic = new BikeMechanic(req.body);
+    const newMechanic = new Mechanics(req.body);
 
     // Save the new mechanic document
     await newMechanic.save();
