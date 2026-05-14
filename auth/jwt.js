@@ -1,9 +1,9 @@
 const jwt = require("jsonwebtoken");
 const { token } = require("morgan");
+require("dotenv").config();
 
 const verifyToken = (req, res, next) => {
   const token = req.headers["authorization"];
-  console.log(req.headers);
   if (!token) {
     return next(new Error("You dont have JWT"));
   }
