@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { verifyToken } = require("../auth/jwt");
 const sendEmail = require("../util/mail");
+require("dotenv").config();
 
 router.post("/signup", async function (req, res, next) {
   const { error } = validate(req.body);
@@ -59,7 +60,7 @@ const Loginuser = async (req, res, next) => {
         .json({ message: "Please Verify Your Email", error: true });
     }
 
-    const token = jwt.sign({ id: user._id }, "Secret", {expiresIn: "1h"});
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
     res.status(201).send({ token: token, name: user.name });
 
