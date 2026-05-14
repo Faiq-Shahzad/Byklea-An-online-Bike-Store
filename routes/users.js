@@ -7,6 +7,8 @@ const { verifyToken } = require("../auth/jwt");
 const sendEmail = require("../util/mail");
 require("dotenv").config();
 
+const appUrl = process.env.APP_URL || "http://localhost:3000";
+
 router.post("/signup", async function (req, res, next) {
   const { error } = validate(req.body);
   if (error) {
@@ -28,7 +30,7 @@ router.post("/signup", async function (req, res, next) {
     );
     const UserModal = new User({ ...req.body, verifycode });
     const UserSave = await UserModal.save();
-    const url = `http://localhost:3000/verify/${verifycode}`;
+    const url = `${appUrl}/verify/${verifycode}`;
     await sendEmail(req.body.email, "Verify User", url);
     console.log("send email to ", req.body.email);
     res.status(200).json(UserSave);

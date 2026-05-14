@@ -4,6 +4,9 @@ const Token = require("../models/token");
 const crypto = require("crypto");
 const sendEmail = require("../util/mail");
 const bcrypt = require("bcrypt");
+require("dotenv").config();
+
+const appUrl = process.env.APP_URL || "http://localhost:3000";
 
 // send password link
 router.post("/", async (req, res) => {
@@ -20,7 +23,7 @@ router.post("/", async (req, res) => {
       }).save();
     }
 
-    const url = `http://localhost:3000/resetpassword/${USER._id}/${token.token}/`;
+    const url = `${appUrl}/resetpassword/${USER._id}/${token.token}/`;
     await sendEmail(USER.email, "Password Reset", url);
 
     res.status(200).json();
