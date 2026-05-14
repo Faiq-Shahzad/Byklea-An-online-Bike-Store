@@ -18,9 +18,10 @@ var passwordresetrouter = require("./routes/resetpassword");
 var verifyuserrouter = require("./routes/verifyuser");
 var adsrouter = require("./routes/ads");
 var partsrouter = require("./routes/parts");
-const { error } = require("console");
 
 var app = express();
+const frontendOrigin = process.env.FRONTEND_URL || "http://localhost:3001";
+const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/byklea";
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -30,7 +31,7 @@ app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({ credentials: true, origin: "http://localhost:3001" }));
+app.use(cors({ credentials: true, origin: frontendOrigin }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/user", usersRouter);
@@ -41,20 +42,19 @@ app.use("/parts", partsrouter);
 
 const textGeneration = async (prompt) => {
   try {
-    const response = await openai.createCompletion({
-    model: 'text-davinci-002',
-    prompt: `Human: ${prompt}\nAI: `,
-    temperature: 0.5,
-    max_tokens: 100,
-    top_p: 0.9,
-    frequency_penalty: 1,
-    presence_penalty: 0.3,
-    stop: ['Human:', 'AI:']
-      });
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.5,
+      max_tokens: 100,
+      top_p: 0.9,
+      frequency_penalty: 1,
+      presence_penalty: 0.3,
+    });
   
       return {
           status: 1,
-          response: `${response.data.choices[0].text}`
+          response: response.choices[0].message.content || ""
       };
   } catch (error) {
       return {
@@ -93,7 +93,7 @@ app.post('/dialogflow', async (req, res) => {
 });
 
 
-mongoose.connect("mongodb://127.0.0.1:27017/byklea")
+mongoose.connect(mongoUri)
   .then(() => {
     console.log("Connected to MongoDB");
   })
