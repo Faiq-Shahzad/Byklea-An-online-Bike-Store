@@ -5,7 +5,10 @@ const { verifyToken } = require("../auth/jwt");
 
 router.post("/add", verifyToken, async function (req, res, next) {
   try {
-    const partsModal = new Parts(req.body);
+    const partsModal = new Parts({
+      ...req.body,
+      userid: req.user.id,
+    });
     const PartSave = await partsModal.save();
     res.status(200).json(PartSave);
   } catch (error) {
@@ -40,12 +43,18 @@ router.get("/get/:id", verifyToken, async (req, res) => {
 //Delete Part by ID
 router.delete("/delete/:id", verifyToken, async (req, res) => {
   try {
-    const part = await Parts.findByIdAndRemove({ _id: req.params.id });
+    const part = await Parts.findById(req.params.id);
 
     if (!part) {
-      return res.status(404).json({ error: "Ad not found" });
+      return res.status(404).json({ error: "Part not found" });
     }
-    res.json({ message: "Ad deleted successfully" });
+
+    if (part.userid?.toString() !== req.user.id) {
+      return res.status(403).json({ error: "You are not authorized to delete this part" });
+    }
+
+    await Parts.deleteOne({ _id: req.params.id });
+    res.json({ message: "Part deleted successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server error" });
@@ -53,18 +62,27 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
 });
 
 //Update Part by ID
-router.put('/update/:id',verifyToken, async (req, res) => {
+router.put('/update/:id', verifyToken, async (req, res) => {
   try {
     const { name, description, condition, price, category } = req.body;
-    const part = await Parts.findByIdAndUpdate(
-      req.params.id,
-      { name, description, condition, price, category },
-      { new: true }
-    );
+    const part = await Parts.findById(req.params.id);
+
     if (!part) {
       return res.status(404).json({ error: 'Part not found' });
     }
-    res.json({ message: 'Part updated successfully', book });
+
+    if (part.userid?.toString() !== req.user.id) {
+      return res.status(403).json({ error: "You are not authorized to update this part" });
+    }
+
+    part.name = name;
+    part.description = description;
+    part.condition = condition;
+    part.price = price;
+    part.category = category;
+
+    const updatedPart = await part.save();
+    res.json({ message: 'Part updated successfully', part: updatedPart });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });
