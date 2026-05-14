@@ -5,7 +5,12 @@ const { verifyToken } = require("../auth/jwt");
 
 router.post("/add", verifyToken, async function (req, res, next) {
   try {
-    const adsModal = new Ads(req.body);
+    const { title, adtitle, ...rest } = req.body;
+    const adsModal = new Ads({
+      ...rest,
+      adtitle: adtitle || title,
+      userid: req.user.id,
+    });
     const AdSave = await adsModal.save();
     res.status(200).json(AdSave);
   } catch (error) {
@@ -65,7 +70,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
 //Update Ad by ID
 router.put("/update/:id", verifyToken, async (req, res) => {
   try {
-    const { title, description, transmission, city, model, color, price } =
+    const { title, adtitle, description, transmission, city, model, color, price } =
       req.body;
 
     // Find the ad by its _id
@@ -82,7 +87,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         .json({ error: "You are not authorized to update this ad" });
     }
 
-    ad.title = title;
+    ad.adtitle = adtitle || title;
     ad.description = description;
     ad.transmission = transmission;
     ad.city = city;
