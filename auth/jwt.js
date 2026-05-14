@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-const { token } = require("morgan");
 require("dotenv").config();
 
 const verifyToken = (req, res, next) => {
@@ -16,4 +15,13 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
-module.exports = { verifyToken };
+
+const requireAdmin = (req, res, next) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+
+  next();
+};
+
+module.exports = { verifyToken, requireAdmin };

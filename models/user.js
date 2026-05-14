@@ -22,6 +22,11 @@ const userSchema = new schema({
     type: Boolean,
     default: false,
   },
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user",
+  },
   verifycode: {
     type: String,
   },

@@ -62,7 +62,11 @@ const Loginuser = async (req, res, next) => {
         .json({ message: "Please Verify Your Email", error: true });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign(
+      { id: user._id, role: user.role || "user" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
     res.status(201).send({ token: token, name: user.name });
 

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Mechanics = require("../models/mechanics");
-const { verifyToken } = require("../auth/jwt");
+const { verifyToken, requireAdmin } = require("../auth/jwt");
 
 // Endpoint to allow mechanics to sign up and set location
 router.post("/signup", verifyToken, async (req, res) => {
@@ -20,11 +20,11 @@ router.post("/signup", verifyToken, async (req, res) => {
 });
 
 // Approve a bike mechanic (Admin only)
-router.put("/approve/:id", async (req, res) => {
+router.put("/approve/:id", verifyToken, requireAdmin, async (req, res) => {
   try {
     const mechanic = await Mechanics.findByIdAndUpdate(
       req.params.id,
-      { approved: true }, // You can add an 'approved' field to the BikeMechanic schema
+      { approved: true },
       { new: true }
     );
     if (!mechanic) {
@@ -48,7 +48,7 @@ router.get("/approved", async (req, res) => {
   }
 });
 
-router.get("/unapproved", async (req, res) => {
+router.get("/unapproved", verifyToken, requireAdmin, async (req, res) => {
   try {
     const unapprovedMechanics = await Mechanics.find({ approved: false });
     res.status(200).json(unapprovedMechanics);
