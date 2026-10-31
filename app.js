@@ -16,6 +16,7 @@ var passwordresetrouter = require("./routes/resetpassword");
 var verifyuserrouter = require("./routes/verifyuser");
 var adsrouter = require("./routes/ads");
 var partsrouter = require("./routes/parts");
+var mechanicsrouter = require("./routes/mechanics");
 
 var app = express();
 
@@ -30,6 +31,7 @@ app.use("/resetpassword", passwordresetrouter);
 app.use("/verify", verifyuserrouter);
 app.use("/ads", adsrouter);
 app.use("/parts", partsrouter);
+app.use("/mechanics", mechanicsrouter);
 
 const textGeneration = async (prompt) => {
   try {
