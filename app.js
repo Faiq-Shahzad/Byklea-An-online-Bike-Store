@@ -44,6 +44,11 @@ app.use("/user/signin", limiter(15, 30));
 app.use(["/resetpassword", "/verify"], limiter(15, 30));
 app.use("/dialogflow", limiter(1, 120)); // Dialogflow calls come from a few Google IPs
 
+app.get("/healthz", (req, res) => {
+  const dbUp = mongoose.connection.readyState === 1;
+  res.status(dbUp ? 200 : 503).json({ status: dbUp ? "ok" : "degraded", db: dbUp ? "up" : "down" });
+});
+
 app.use("/user", usersRouter);
 app.use("/resetpassword", passwordresetrouter);
 app.use("/verify", verifyuserrouter);
