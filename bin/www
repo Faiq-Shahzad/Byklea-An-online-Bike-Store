@@ -5,6 +5,8 @@
  */
 
 var app = require('../app');
+var config = require('../util/config');
+var mongoose = require('mongoose');
 var debug = require('debug')('azeems-fyp:server');
 var http = require('http');
 
@@ -22,12 +24,45 @@ app.set('port', port);
 var server = http.createServer(app);
 
 /**
- * Listen on provided port, on all network interfaces.
+ * Connect to MongoDB first, then listen on provided port, on all network interfaces.
+ * Exiting on failure lets a process manager restart us instead of serving errors.
  */
 
-server.listen(port);
+mongoose.connect(config.mongoUri)
+  .then(function () {
+    console.log('Connected to MongoDB');
+    server.listen(port);
+  })
+  .catch(function (error) {
+    console.error('Error connecting to MongoDB:', error.message);
+    process.exit(1);
+  });
+mongoose.connection.on('disconnected', function () {
+  console.error('MongoDB disconnected');
+});
+mongoose.connection.on('reconnected', function () {
+  console.log('MongoDB reconnected');
+});
 server.on('error', onError);
 server.on('listening', onListening);
+
+/**
+ * Finish in-flight requests and close the DB connection on shutdown.
+ */
+
+function shutdown(signal) {
+  console.log(signal + ' received, shutting down');
+  server.close(function () {
+    mongoose.connection.close().then(function () {
+      process.exit(0);
+    });
+  });
+  setTimeout(function () {
+    process.exit(1);
+  }, 10000).unref();
+}
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 
 /**
  * Normalize a port into a number, string, or false.

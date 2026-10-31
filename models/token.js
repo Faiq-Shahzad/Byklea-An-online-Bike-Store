@@ -8,6 +8,7 @@ const tokenSchema = new Schema({
     ref: "User",
     unique: true,
   },
+  // SHA-256 of the reset token; the raw token only ever exists in the emailed link.
   token: { type: String, required: true },
   createdAt: { type: Date, default: Date.now, expires: 3600 },
 });

@@ -23,44 +23,40 @@ Byklea Backend is an Express and MongoDB API for a motorcycle marketplace. It su
 
 ## Project Structure
 
-- `app.js` - Express app configuration, middleware, routes, database connection, and webhook handler
-- `bin/www` - HTTP server bootstrap
+- `app.js` - Express app configuration, security middleware, rate limits, routes, and error handling
+- `bin/www` - HTTP server bootstrap: connects to MongoDB, then listens; graceful shutdown
 - `auth/` - JWT authentication helpers
 - `models/` - Mongoose schemas
 - `routes/` - API route handlers
-- `util/` - Shared utilities such as email sending
-- `views/` - Jade templates for error handling
+- `util/` - Config loading and validation, request validation helpers, email sending
 - `public/` - Static assets
 
 ## Prerequisites
 
-- Node.js 18 or newer
+- Node.js 20 or newer
 - MongoDB running locally or a MongoDB connection string
 - A working email account for SMTP delivery
 - An OpenAI API key if you want the chatbot fallback endpoint to respond
 
 ## Environment Variables
 
-Create a local `.env` file from `.env.example` and provide these values:
+Create a local `.env` file from `.env.example` and provide these values. The server refuses to start if `JWT_SECRET` is missing, still a placeholder, or shorter than 32 characters.
 
 - `MONGODB_URI` - MongoDB connection string
-- `JWT_SECRET` - Secret used to sign and verify access tokens
+- `JWT_SECRET` - Random secret (32+ chars) used to sign access tokens
 - `APP_URL` - Base URL for verification and password reset links
 - `FRONTEND_URL` - Allowed frontend origin for CORS
-- `USER` - Email account used by Nodemailer
-- `PASS` - Email account password or app password
-- `OPENAI_API_KEY` - OpenAI API key
+- `TRUST_PROXY` - Number of reverse proxies in front of the app (e.g. `1`), so rate limits see real client IPs
+- `SMTP_HOST`, `SMTP_PORT` - SMTP server (defaults: `smtp.gmail.com`, `465`; use `587` for STARTTLS)
+- `SMTP_USER`, `SMTP_PASS` - SMTP credentials (for Gmail, an app password)
+- `MAIL_FROM` - Optional sender address, defaults to `SMTP_USER`
+- `OPENAI_API_KEY` - OpenAI API key for the chatbot fallback (optional)
+- `DIALOGFLOW_WEBHOOK_SECRET` - Shared secret Dialogflow must send in the `X-Webhook-Secret` header
 
-Example:
+Generate secrets with:
 
-```env
-MONGODB_URI=mongodb://127.0.0.1:27017/byklea
-JWT_SECRET=change_me
-APP_URL=http://localhost:3000
-FRONTEND_URL=http://localhost:3001
-USER=your_email@example.com
-PASS=your_email_password
-OPENAI_API_KEY=your_openai_key
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
 ## Setup
@@ -85,9 +81,11 @@ npm start
 
 - `POST /user/signup` - Create a new user and send a verification email
 - `POST /user/signin` - Sign in and receive a JWT
-- `GET /user/getid` - Get the current authenticated user ID
+- `GET /user/getid` - Get the current authenticated user
+- `GET /user/get` - List users (admin)
+- `DELETE /user/:id` - Delete a user and their ads, parts, and reset tokens (admin)
 - `GET /verify/:verifycode` - Verify a user account
-- `POST /resetpassword` - Send a password reset email
+- `POST /resetpassword` - Send a password reset email (always returns 200)
 - `GET /resetpassword/:id/:token` - Validate a password reset link
 - `POST /resetpassword/:id/:token` - Set a new password
 
@@ -120,19 +118,25 @@ npm start
 ### Mechanics
 
 - `POST /mechanics/signup` - Register a mechanic
-- `PUT /mechanics/approve/:id` - Approve a mechanic
+- `PUT /mechanics/approve/:id` - Approve a mechanic (admin)
 - `GET /mechanics/approved` - List approved mechanics
-- `GET /mechanics/unapproved` - List unapproved mechanics
+- `GET /mechanics/unapproved` - List unapproved mechanics (admin)
 
 ### Chatbot
 
-- `POST /dialogflow` - Dialogflow webhook endpoint with OpenAI fallback
+- `POST /dialogflow` - Dialogflow webhook endpoint with OpenAI fallback. In the Dialogflow console, add a webhook header `X-Webhook-Secret` with the value of `DIALOGFLOW_WEBHOOK_SECRET`; requests without it are rejected.
+
+### Operations
+
+- `GET /healthz` - Returns 200 when the database is connected, 503 otherwise
 
 ## Notes
 
 - The repository keeps `.env.example` in version control and ignores the local `.env` file.
-- Several routes expect an `Authorization: Bearer <token>` header.
-- Some routes are designed for authenticated users only and should be protected on the client side as well.
+- Several routes expect an `Authorization: Bearer <token>` header; missing or invalid tokens get a 401.
+- Admin routes need a user whose `role` is `admin`. There is no endpoint to grant it; set it in the database.
+- Request bodies are validated, and fields the server owns (likes, ratings, approval, role) are ignored if sent.
+- Signup, sign-in, password reset, verification, and the Dialogflow webhook are rate limited per IP. Limits are in memory, so use a shared store such as Redis before running more than one instance.
 
 ## License
 
