@@ -13,10 +13,14 @@ const userSchema = new schema({
   email: {
     type: String,
     required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
   },
   password: {
     type: String,
     required: true,
+    select: false,
   },
   isverified: {
     type: Boolean,
@@ -29,6 +33,8 @@ const userSchema = new schema({
   },
   verifycode: {
     type: String,
+    index: true,
+    select: false,
   },
 });
 
@@ -45,14 +51,21 @@ userSchema.pre("save", async function (next) {
   }
 });
 
+const passwordSchema = passwordComplexity().required().label("Password");
+
 const validate = (data) => {
   const schema = Joi.object({
-    name: Joi.string().required().label("Name"),
-    email: Joi.string().email().required().label("Email"),
-    password: passwordComplexity().required().label("Password"),
+    name: Joi.string().trim().max(100).required().label("Name"),
+    email: Joi.string().email().lowercase().trim().max(254).required().label("Email"),
+    password: passwordSchema,
   });
-  return schema.validate(data);
+  return schema.validate(data, { stripUnknown: true });
 };
 const User = mongoose.model("User", userSchema);
 
-module.exports = { User, validate };
+// Fails if existing data has duplicate emails; surface it instead of silently running without the index.
+User.on("index", (error) => {
+  if (error) console.error("User index build failed:", error.message);
+});
+
+module.exports = { User, validate, passwordSchema };

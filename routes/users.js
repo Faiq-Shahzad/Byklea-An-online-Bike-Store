@@ -1,116 +1,90 @@
 const express = require("express");
 const router = express.Router();
-const { User, validate } = require("../models/user");
+const crypto = require("crypto");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const { verifyToken } = require("../auth/jwt");
+const Joi = require("joi");
+const createError = require("http-errors");
+const { User, validate } = require("../models/user");
+const Ads = require("../models/ads");
+const Parts = require("../models/parts");
+const Token = require("../models/token");
+const { signToken, verifyToken, requireAdmin } = require("../auth/jwt");
+const { validateBody, validateObjectId } = require("../util/validate");
 const sendEmail = require("../util/mail");
-require("dotenv").config();
+const config = require("../util/config");
 
-const appUrl = process.env.APP_URL || "http://localhost:3000";
+router.param("id", validateObjectId);
 
-router.post("/signup", async function (req, res, next) {
-  const { error } = validate(req.body);
+// Compared against when the email is unknown, so a miss takes as long as a wrong password.
+const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString("hex"), 10);
+
+const credentialsSchema = Joi.object({
+  email: Joi.string().email().lowercase().trim().required(),
+  password: Joi.string().max(128).required(),
+});
+
+router.post("/signup", async function (req, res) {
+  const { error, value } = validate(req.body ?? {});
   if (error) {
     return res.status(400).send({ message: error.details[0].message });
   }
 
-  const uemail = await User.findOne({ email: req.body.email });
-  if (uemail) {
+  if (await User.exists({ email: value.email })) {
     return res.status(409).json();
   }
-  const contact = await User.findOne({ phone_number: req.body.phone_number });
-  if (contact) {
-    return res.status(409).json();
-  }
+
+  const verifycode = crypto.randomBytes(32).toString("hex");
+  const user = await new User({ ...value, verifycode }).save();
   try {
-    const verifycode = parseInt(
-      Date.now() + (Math.random() * 100).toString(),
-      16
-    );
-    const UserModal = new User({ ...req.body, verifycode });
-    const UserSave = await UserModal.save();
-    const url = `${appUrl}/verify/${verifycode}`;
-    await sendEmail(req.body.email, "Verify User", url);
-    console.log("send email to ", req.body.email);
-    res.status(200).json(UserSave);
+    await sendEmail(user.email, "Verify User", `${config.appUrl}/verify/${verifycode}`);
   } catch (error) {
-    console.log(error);
-    next(error);
+    // Roll back so the user can sign up again instead of being stuck unverified.
+    console.error("Verification email failed:", error.message);
+    await User.deleteOne({ _id: user._id });
+    throw createError(503, "Could not send verification email, please try again", { expose: true });
   }
+  res.status(200).json({ id: user._id, name: user.name, email: user.email });
 });
 
-const Loginuser = async (req, res, next) => {
-  console.log("Request received");
-  try {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) {
-      return res
-        .status(401)
-        .json({ message: "Credentials Dont Match", error: true });
-    }
-    const isPassword = await bcrypt.compare(req.body.password, user.password);
-    if (!isPassword) {
-      return res
-        .status(401)
-        .json({ message: "Credentials Dont Match", error: true });
-    }
-
-    if (!user.isverified) {
-      return res
-        .status(401)
-        .json({ message: "Please Verify Your Email", error: true });
-    }
-
-    const token = jwt.sign(
-      { id: user._id, role: user.role || "user" },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    res.status(201).send({ token: token, name: user.name });
-
-    //  res.cookie("access_token", token, {httpOnly: true}).status(201).send("User Authenticated and Logged In!!!")
-  } catch (error) {
-    console.log(error);
-    return next(new Error());
+router.post("/signin", validateBody(credentialsSchema), async (req, res) => {
+  const user = await User.findOne({ email: req.body.email }).select("+password");
+  const isPassword = await bcrypt.compare(req.body.password, user?.password ?? DUMMY_HASH);
+  if (!user || !isPassword) {
+    return res
+      .status(401)
+      .json({ message: "Credentials Dont Match", error: true });
   }
-};
 
-router.post("/signin", (req, res, next) => Loginuser(req, res, next));
-
-router.get("/getid", verifyToken, async (req, res, next) => {
-  try {
-    console.log(req.user);
-    const user = await User.find({ userid: req.user.id });
-    return res.status(200).json({ user_id: req.user.id, user });
-  } catch (error) {
-    console.log(error);
-    next(error);
+  if (!user.isverified) {
+    return res
+      .status(401)
+      .json({ message: "Please Verify Your Email", error: true });
   }
+
+  res.status(201).send({ token: signToken(user), name: user.name });
 });
 
-router.get("/get", async (req, res, next) => {
-  try {
-    const user = await User.find();
-    return res.status(200).json(user);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
+router.get("/getid", verifyToken, async (req, res) => {
+  const user = await User.findById(req.user.id);
+  return res.status(200).json({ user_id: req.user.id, user });
 });
 
-router.delete("/:id", async (req, res, next) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    return res.status(200).json({ message: "User deleted successfully" });
-  } catch (error) {
-    console.log(error);
-    next(error);
+router.get("/get", verifyToken, requireAdmin, async (req, res) => {
+  const users = await User.find();
+  return res.status(200).json(users);
+});
+
+router.delete("/:id", verifyToken, requireAdmin, async (req, res) => {
+  const user = await User.findByIdAndDelete(req.params.id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
   }
+  await Promise.all([
+    Ads.deleteMany({ userid: user._id }),
+    Parts.deleteMany({ userid: user._id }),
+    Token.deleteMany({ userId: user._id }),
+  ]);
+  return res.status(200).json({ message: "User deleted successfully" });
 });
 
 module.exports = router;
