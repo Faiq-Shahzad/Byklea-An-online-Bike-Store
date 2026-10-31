@@ -1,15 +1,21 @@
 const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const createError = require("http-errors");
+const config = require("../util/config");
+
+const signToken = (user) =>
+  jwt.sign({ id: user._id, role: user.role || "user" }, config.jwtSecret, {
+    algorithm: "HS256",
+    expiresIn: "1h",
+  });
 
 const verifyToken = (req, res, next) => {
-  const token = req.headers["authorization"];
-  if (!token) {
-    return next(new Error("You dont have JWT"));
+  const [scheme, token] = (req.headers["authorization"] || "").split(" ");
+  if (!/^Bearer$/i.test(scheme) || !token) {
+    return next(createError(401, "Missing bearer token"));
   }
-  const bearer = token.split(" ")[1];
-  jwt.verify(bearer, process.env.JWT_SECRET, (error, user) => {
+  jwt.verify(token, config.jwtSecret, { algorithms: ["HS256"] }, (error, user) => {
     if (error) {
-      return next(new Error("Invalid JWT"));
+      return next(createError(401, "Invalid or expired token"));
     }
     req.user = user;
     next();
@@ -24,4 +30,4 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-module.exports = { verifyToken, requireAdmin };
+module.exports = { signToken, verifyToken, requireAdmin };
